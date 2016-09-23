@@ -340,8 +340,7 @@ def build_dependency_graph(metas):
     # drop all extra packages that I do not have conda recipes for
     for name, items in union.items():
         union[name] = [item for item in items if item in union]
-
-    return resolve_dependencies(union)
+    return union
 
 
 def resolve_dependencies(package_dependencies):
@@ -402,7 +401,8 @@ def run_build(metas, allow_failures=False):
     allow_failures : bool, optional
 
     """
-    metas_name_order = build_dependency_graph(metas)
+    dependency_graph = build_dependency_graph(metas)
+    metas_name_order = resolve_dependencies(dependency_graph)
     # pdb.set_trace()
     print('dependency_graph=%s' % metas_name_order)
     # metas_name_order = resolve_dependencies(dependency_graph)
