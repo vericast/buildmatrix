@@ -572,7 +572,6 @@ def run(recipes_path, python, channel, numpy, allow_failures=False):
     if not os.path.exists(recipes_path):
         logger.error("The recipes_path: '%s' does not exist." % recipes_path)
         sys.exit(1)
-    global anaconda_cli
     if numpy is None:
         numpy = os.environ.get("CONDA_NPY", "1.11")
         if not isinstance(numpy, list):
