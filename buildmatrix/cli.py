@@ -481,7 +481,7 @@ already exist are built.
     )
     p.add_argument(
         '-c', "--channel",
-        acttion='store',
+        action='store',
         nargs='?',
         help="Conda channel to check for pre-existing artifacts"
     )
