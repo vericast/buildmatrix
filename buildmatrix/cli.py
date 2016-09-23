@@ -503,7 +503,7 @@ def set_binstar_upload(on=False):
 
     Raises exception if disabling binstar upload fails
     """
-    rcpath = os.path.join(os.path.expanduser('~'), '.condarc')
+    rcpath = os.environ.get("CONDARC") or os.path.join(os.path.expanduser('~'), '.condarc')
     with open(rcpath, 'r') as f:
         rc = yaml.load(f.read())
     binstar_upload = rc.get('binstar_upload', False)
