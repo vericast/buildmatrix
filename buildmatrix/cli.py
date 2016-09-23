@@ -32,7 +32,7 @@ CLI to build a folder full of recipes.
 
 Example usage:
 
-buildmatrix /folder/of/recipes --python 2.7 3.4 3.5 --numpy 1.10 1.11 --token <your anaconda token>
+buildmatrix /folder/of/recipes --python 2.7 3.4 3.5 --numpy 1.10 1.11 -c some_conda_channel
 
 buildmatrix --help
 """
@@ -88,7 +88,7 @@ signal.signal(signal.SIGTERM, handle_signal)
 
 
 def get_file_names_on_anaconda_channel(channel):
-    """Get the names of **all** the files on anaconda.org/username
+    """Get the names of **all** the files on a channel
 
     Parameters
     ----------
@@ -389,8 +389,8 @@ def resolve_dependencies(package_dependencies):
                          ''.format(remaining_dependencies))
 
 
-def run_build(metas, username, token=None, upload=True, allow_failures=False):
-    """Build and upload packages that do not already exist at {{ username }}
+def run_build(metas, allow_failures=False):
+    """Build packages that do not already exist at {{ channel }}
 
     Parameters
     ----------
@@ -399,21 +399,9 @@ def run_build(metas, username, token=None, upload=True, allow_failures=False):
         Iterable of conda build Metadata objects.
         HINT: output of `decide_what_to_build` is probably what should be
         passed in here
-    username : str
-        The anaconda user to upload all the built packages to
-    token : str, optional
-        The binstar token that should be used to upload packages to
-        anaconda.org/username. If no token is provided, no uploading will occur
-    upload : bool, optional
-        Whether or not to upload packages. If True, requires `token` to be set.
-        The reason why there is this additional flag is that sometimes you need
-        a token to authenticate to a channel to see if packages already exist
-        but you might not want to upload that package.
     allow_failures : bool, optional
 
     """
-    if token is None:
-        token = get_binstar_token()
     metas_name_order = build_dependency_graph(metas)
     # pdb.set_trace()
     print('dependency_graph=%s' % metas_name_order)
@@ -426,11 +414,8 @@ def run_build(metas, username, token=None, upload=True, allow_failures=False):
     for meta in build_order:
         logger.info(meta.build_name)
 
-    no_token = []
-    uploaded = []
-    upload_failed = []
     build_or_test_failed = []
-    UPLOAD_CMD = ['anaconda', '-t', token, 'upload', '-u', username]
+    build_success = []
     # for each package
     for meta in build_order:
         full_build_path = meta.full_build_path
@@ -463,65 +448,13 @@ def run_build(metas, username, token=None, upload=True, allow_failures=False):
             logger.error(message)
             if not allow_failures:
                 sys.exit(1)
-        if token and upload:
-            print("UPLOAD START")
-            cmd = UPLOAD_CMD + [full_build_path]
-            cleaned_cmd = cmd.copy()
-            cleaned_cmd[2] = 'SCRUBBED'
-            print("Upload command={}".format(cleaned_cmd))
-            stdout, stderr, returncode = Popen(cmd)
-            if returncode != 0:
-                message = ('\n\n========== STDOUT ==========\n'
-                           '\n{}'
-                           '\n\n========== STDERR ==========\n'
-                           '\n{}'.format(pformat(stdout), pformat(stderr)))
-                logger.error(message)
-                upload_failed.append(build_name)
-                continue
-            uploaded.append(build_name)
-            continue
 
-        no_token.append(build_name)
+        build_success.append(build_name)
 
     return {
-        'uploaded': sorted(uploaded),
-        'no_token': sorted(no_token),
-        'upload_failed': sorted(upload_failed),
+        'build_success': sorted(build_success),
         'build_or_test_failed': sorted(build_or_test_failed),
     }
-
-
-def set_binstar_upload(on=False):
-    """Turn on or off binstar uploading
-
-    Parameters
-    ----------
-    on : bool, optional
-        True: turn on binstar uploading
-        False: turn off binstar uploading
-        Defaults to False
-
-    Raises exception if disabling binstar upload fails
-    """
-    rcpath = os.environ.get("CONDARC") or os.path.join(os.path.expanduser('~'), '.condarc')
-    with open(rcpath, 'r') as f:
-        rc = yaml.load(f.read())
-    binstar_upload = rc.get('binstar_upload', False)
-    if binstar_upload != on:
-        rc['binstar_upload'] = on
-        with open(rcpath, 'w') as f:
-            # write the new yaml in `rcpath`
-            f.write(yaml.dump(rc))
-
-
-def get_binstar_token():
-    token = os.environ.get('BINSTAR_TOKEN')
-    if not token:
-        print("No binstar token available. There will be no uploading."
-              "Consider setting the BINSTAR_TOKEN environmental "
-              "variable or passing one in via the --token command "
-              "line argument")
-    return token
 
 
 def pdb_hook(exctype, value, traceback):
@@ -547,38 +480,21 @@ already exist are built.
         help="Python version to build conda packages for",
     )
     p.add_argument(
-        '-t', '--token', action='store',
+        '-c', "--channel",
+        acttion='store',
         nargs='?',
-        help='Binstar token to use to upload build packages',
-        default=None
+        help="Conda channel to check for pre-existing artifacts"
     )
     p.add_argument(
         '-l', '--log',
         nargs='?',
         help='Name of the log file to write'
     )
-    # TODO Verify that `--site` actually works...
-    p.add_argument(
-        "-s", "--site",
-        nargs='?',
-        help='Anaconda upload api (defaults to %(default)s',
-        default='https://api.anaconda.org'
-    )
-    p.add_argument(
-        "-u", "--username",
-        action="store",
-        nargs='?',
-        help=("Username to upload package to")
-    )
     p.add_argument(
         '--numpy', action='store', nargs='*',
         help=('List the numpy versions to build packages for. Defaults to '
               '%(default)s'),
         default=[DEFAULT_NP_VER]
-    )
-    p.add_argument(
-        '--no-upload', action='store_true', default=False,
-        help="This flag disables uploading"
     )
     p.add_argument(
         '-v', '--verbose', help="Enable DEBUG level logging. Default is INFO",
@@ -604,7 +520,6 @@ already exist are built.
     loglevel = logging.DEBUG if args_dct.pop('verbose') else logging.INFO
     log = args_dct.pop('log')
     init_logging(log_file=log, loglevel=loglevel)
-    args_dct['upload'] = not args_dct.pop('no_upload')
     args_dct['recipes_path'] = os.path.abspath(args.recipes_path)
 
     print(args_dct)
@@ -635,8 +550,7 @@ def init_logging(log_file=None, loglevel=logging.INFO):
     logger.addHandler(file_handler)
 
 
-def run(recipes_path, python, site, username, numpy, token=None,
-        upload=True, allow_failures=False):
+def run(recipes_path, python, channel, numpy, allow_failures=False):
     """
     Run the build for all recipes listed in recipes_path
 
@@ -646,19 +560,10 @@ def run(recipes_path, python, site, username, numpy, token=None,
         Folder that contains conda recipes
     python : iterable
         Iterable of python versions to build conda packages for
-    site : str
-        Anaconda server API url.
-    username : str
-        The username to check for packages and to upload built packages to
+    channel : str
+        The channel to check for packages
     numpy : iterable
         Iterable of numpy versions to build conda packages for
-    token : str, optional
-        Token used to authenticate against `site` so that packages can be
-        uploaded. If no token is provided, os.environ['BINSTAR_TOKEN'] will be
-        looked for. If that is not set, this script will likely error out.
-    upload : bool, optional
-        False: Don't upload built packages.
-        Defaults to True
     allow_failures : bool, optional
         True: Continue building packages after one has failed.
         Defaults to False
@@ -667,17 +572,13 @@ def run(recipes_path, python, site, username, numpy, token=None,
     if not os.path.exists(recipes_path):
         logger.error("The recipes_path: '%s' does not exist." % recipes_path)
         sys.exit(1)
-    # just disable binstar uploading whenever this script is running.
-    print('Disabling binstar upload. If you want to turn it back on, '
-          'execute: `conda config --set binstar_upload true`')
-    set_binstar_upload(False)
     global anaconda_cli
     if numpy is None:
         numpy = os.environ.get("CONDA_NPY", "1.11")
         if not isinstance(numpy, list):
             numpy = [numpy]
     # get all file names that are in the channel I am interested in
-    packages = get_file_names_on_anaconda_channel(username)
+    packages = get_file_names_on_anaconda_channel(channel)
 
     metas_to_build, metas_to_skip = decide_what_to_build(
         recipes_path, python, packages, numpy)
@@ -687,8 +588,7 @@ def run(recipes_path, python, site, username, numpy, token=None,
 
     # Run the actual build
     try:
-        results = run_build(metas_to_build, username, token=token,
-                            upload=upload, allow_failures=allow_failures)
+        results = run_build(metas_to_build, allow_failures=allow_failures)
         results['alreadybuilt'] = sorted([skip.build_name
                                           for skip in metas_to_skip])
     except Exception as e:
@@ -711,22 +611,14 @@ def run(recipes_path, python, site, username, numpy, token=None,
             message = ("Some packages failed to build\n{}"
                        "\n{}".format(pformat(results['build_or_test_failed'])))
             logger.error(message)
-        if results['no_token']:
-            logger.error("No anaconda token. Cannot upload these packages")
-            logger.error(pformat(results['no_token']))
-        if results['upload_failed']:
-            message = ('Upload failed for these packages'
-                       '\n{}'.format(pformat(results['upload_failed'])))
-            logger.error(message)
+        if results['build_success']:
+            logger.info("Packages build successfully")
+            logger.info(pformat(results['build_success']))
         if results['alreadybuilt']:
-            logger.info('Packages that already exist in {}'.format(username))
+            logger.info('Packages that already exist in {}'.format(channel))
             logger.info(pformat(results['alreadybuilt']))
-        if results['uploaded']:
-            message = ('Packages that were built and uploaded to the {} channel'
-                       '\n{}'.format(username, pformat(results['uploaded'])))
-            logger.info(message)
 
-        if results['upload_failed'] or results['build_or_test_failed']:
+        if results['build_or_test_failed']:
             # exit with a failed status code
             sys.exit(1)
 
