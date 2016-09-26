@@ -525,7 +525,7 @@ already exist are built.
     log = args_dct.pop('log')
     init_logging(log_file=log, loglevel=loglevel)
     args_dct['recipes_path'] = os.path.abspath(args.recipes_path)
-    if args_dct['channel'] is None:
+    if args_dct.get('channel') is None:
         p.print_help()
         print("\nError: Need to pass in an anaconda channel with '-c' or "
               "'--channel'\n")
