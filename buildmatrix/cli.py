@@ -217,7 +217,11 @@ def decide_what_to_build(recipes_path, python, packages, numpy):
     # logger.info('{: <8} | {}'.format('to build', 'built package name'))
     recipes_path = os.path.abspath(recipes_path)
     logger.info("recipes_path = {}".format(recipes_path))
-    for folder in sorted(os.listdir(recipes_path)):
+    if 'meta.yaml' in os.listdir(recipes_path):
+        folders = [recipes_path]
+    else:
+        folders = sorted(os.listdir(recipes_path))
+    for folder in folders:
         recipe_dir = os.path.join(recipes_path, folder)
         if os.path.isfile(recipe_dir):
             continue
@@ -521,6 +525,11 @@ already exist are built.
     log = args_dct.pop('log')
     init_logging(log_file=log, loglevel=loglevel)
     args_dct['recipes_path'] = os.path.abspath(args.recipes_path)
+    if args_dct['channel'] is None:
+        p.print_help()
+        print("\nError: Need to pass in an anaconda channel with '-c' or "
+              "'--channel'\n")
+        sys.exit(1)
 
     print(args_dct)
     run(**args_dct)
