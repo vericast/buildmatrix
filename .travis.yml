@@ -10,7 +10,7 @@ before_install:
   - . ~/scripts/install-miniconda.sh
 
 install:
-  - conda install conda-build pyyaml pip pytest
+  - conda install conda-build pyyaml pip pytest python=$TRAVIS_PYTHON_VERSION
   - conda update --all
   - pip install codecov
   - pip install .
