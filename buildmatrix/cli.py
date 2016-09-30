@@ -530,10 +530,9 @@ already exist are built.
 
 def init_logging(log_file=None, loglevel=logging.INFO):
     if not log_file:
-        log_dirname = os.path.join(os.path.expanduser('~'),
-                                   'auto-build-logs')
-        os.makedirs(log_dirname, exist_ok=True)
-        log_filename = time.strftime("%m.%d-%H.%M")
+        log_dirname = os.path.join(tempfile.gettempdir(), 'buildmatrix')
+        os.mkdir(log_dirname)
+        log_filename = time.strftime("%Y.%m.%d-%H.%M")
         log = os.path.join(log_dirname, log_filename)
     # set up logging
     print('Logging summary to %s' % log)
