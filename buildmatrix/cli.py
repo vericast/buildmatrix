@@ -101,8 +101,7 @@ def get_file_names_on_anaconda_channel(channel):
         Something like 'linux-64/album-0.0.2.post0-0_g6b05c00_py27.tar.bz2'
     """
     index = get_index([channel], prepend=False)
-    file_names = [v['subdir'] + '/' + k.split('::')[1] for k, v in index.items()]
-
+    file_names = [v['channel'].split('/')[-1] + '/' + k.split('::')[1] for k, v in index.items()]
     return set(file_names)
 
 
