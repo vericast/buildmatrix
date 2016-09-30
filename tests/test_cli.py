@@ -51,6 +51,6 @@ def test_numpy_xx(argv, examples_dir):
     recipe = join(
         examples_dir,
         'needs-numpy-at-compilation')
-    with temp_argv(argv + [recipe]):
+    with temp_argv([recipe] + argv):
         cli.cli()
 
