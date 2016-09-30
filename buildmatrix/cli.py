@@ -44,14 +44,16 @@ import pdb
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import traceback
-from conda.api import get_index
 from argparse import ArgumentParser
 from contextlib import contextmanager
 from pprint import pformat
-import yaml
+
+from conda.api import get_index
 from conda_build.metadata import MetaData
+
 logger = logging.getLogger('build.py')
 current_subprocs = set()
 shutdown = False
