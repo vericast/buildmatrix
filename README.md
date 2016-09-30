@@ -29,6 +29,11 @@ buildmatrix is a thin wrapper around conda-build that does four things:
 
 ## Usage
 
+`buildmatrix` depends on conda and conda_build.  You can pip install
+buildmatrix and it will add the `buildmatrix` command line app and its
+alias `bm` for those of you that abhor typing more than is absolutely 
+necessary
+
 ### Most usage will look like this:
 
 `buildmatrix /path/to/recipe --python 2.7 3.4 3.5 --numpy 1.10 1.11`
