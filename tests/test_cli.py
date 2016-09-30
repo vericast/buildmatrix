@@ -18,7 +18,6 @@ def argv():
         '1.11',
         '-c',
         'anaconda',
-        '--dry-run'
     ]
 
 
@@ -30,15 +29,22 @@ def temp_argv(new_argv):
     sys.argv = orig
 
 
-def test_numpy_xx(argv, capsys):
-    import sys
-    print(sys.argv)
-    print('__file__={}'.format(__file__))
+def test_numpy_xx_dry_run(argv):
+    recipe = join(
+        dirname(__file__),
+        'example-recipes',
+        'compiles-against-numpy')
+    with temp_argv(argv + ['--dry-run', recipe]):
+        with pytest.raises(SystemExit) as se:
+            cli.cli()
+    assert se.value.code == 0
+
+
+def test_numpy_xx(argv):
     recipe = join(
         dirname(__file__),
         'example-recipes',
         'compiles-against-numpy')
     with temp_argv(argv + [recipe]):
-        with pytest.raises(SystemExit) as se:
-            cli.cli()
-    assert se.value.code == 0
+        cli.cli()
+
