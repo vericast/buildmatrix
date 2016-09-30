@@ -3,6 +3,9 @@ from buildmatrix import cli
 
 
 def test_sorting(examples_dir):
+    # This test uses the two package in the examples directory (package-a and
+    # package-b) and makes sure that package-a is built first since package-b
+    # depends on package-a
     cli.init_logging()
     packages = cli.get_file_names_on_anaconda_channel("anaconda")
 
