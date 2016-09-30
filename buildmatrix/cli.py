@@ -236,6 +236,7 @@ def decide_what_to_build(recipes_path, python, packages, numpy):
         python_build_versions = python
         if 'python' not in set(build + run):
             python_build_versions = [DEFAULT_PY]
+        logger.info("\nFiguring out which recipes need to build...")
         for py, npy in itertools.product(python_build_versions,
                                          numpy_build_versions):
             logger.debug("Checking py={} and npy={}".format(py, npy))
@@ -391,12 +392,13 @@ def resolve_dependencies(package_dependencies):
                          ''.format(remaining_dependencies))
 
 
-def run_build(metas, allow_failures=False):
+def run_build(build_order, allow_failures=False):
     """Build packages that do not already exist at {{ channel }}
 
     Parameters
     ----------
-    metas : iterable
+    build_order : iterable
+        The order that the packages should be built in
     recipes_path : str
         Iterable of conda build Metadata objects.
         HINT: output of `decide_what_to_build` is probably what should be
@@ -404,19 +406,6 @@ def run_build(metas, allow_failures=False):
     allow_failures : bool, optional
 
     """
-    dependency_graph = build_dependency_graph(metas)
-    metas_name_order = resolve_dependencies(dependency_graph)
-    # pdb.set_trace()
-    print('dependency_graph=%s' % metas_name_order)
-    # metas_name_order = resolve_dependencies(dependency_graph)
-    build_order = [meta for name in metas_name_order for meta in metas
-                   if meta.meta['package']['name'] == name]
-    # print('metas_order = {}'.format(metas_order))
-    # build_order = builder.sort_dependency_order(metas)
-    logger.info("Build Order.")
-    for meta in build_order:
-        logger.info(meta.build_name)
-
     build_or_test_failed = []
     build_success = []
     # for each package
@@ -597,13 +586,25 @@ def run(recipes_path, python, channel, numpy, allow_failures=False, dry_run=Fals
     if metas_to_build == []:
         print('No recipes to build!. Exiting 0')
         sys.exit(0)
+
+    # sort into the correct order
+    dependency_graph = build_dependency_graph(metas_to_build)
+    metas_name_order = resolve_dependencies(dependency_graph)
+    build_order = [meta for name in metas_name_order for meta in metas_to_build
+                   if meta.meta['package']['name'] == name]
+    logger.info("\nThis is the determined build order...")
+    for meta in build_order:
+        logger.info(meta.build_name)
+
+    # bail out if we're in dry run mode
     if dry_run:
         print("Dry run enabled. Exiting 0")
         sys.exit(0)
 
+
     # Run the actual build
     try:
-        results = run_build(metas_to_build, allow_failures=allow_failures)
+        results = run_build(build_order, allow_failures=allow_failures)
         results['alreadybuilt'] = sorted([skip.build_name
                                           for skip in metas_to_skip])
     except Exception as e:
