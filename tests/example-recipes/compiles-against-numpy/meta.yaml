@@ -1,0 +1,12 @@
+package:
+    name: compiles-with-numpy
+    version: 1
+
+requirements:
+    build:
+        - python
+        - numpy x.x
+    run:
+        - python
+        - numpy x.x
+

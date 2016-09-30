@@ -44,14 +44,16 @@ import pdb
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import traceback
-from conda.api import get_index
 from argparse import ArgumentParser
 from contextlib import contextmanager
 from pprint import pformat
-import yaml
+
+from conda.api import get_index
 from conda_build.metadata import MetaData
+
 logger = logging.getLogger('build.py')
 current_subprocs = set()
 shutdown = False
@@ -101,8 +103,7 @@ def get_file_names_on_anaconda_channel(channel):
         Something like 'linux-64/album-0.0.2.post0-0_g6b05c00_py27.tar.bz2'
     """
     index = get_index([channel], prepend=False)
-    file_names = [v['subdir'] + '/' + k.split('::')[1] for k, v in index.items()]
-
+    file_names = [v['channel'].split('/')[-1] + '/' + k.split('::')[1] for k, v in index.items()]
     return set(file_names)
 
 
@@ -237,6 +238,7 @@ def decide_what_to_build(recipes_path, python, packages, numpy):
         python_build_versions = python
         if 'python' not in set(build + run):
             python_build_versions = [DEFAULT_PY]
+        logger.info("\nFiguring out which recipes need to build...")
         for py, npy in itertools.product(python_build_versions,
                                          numpy_build_versions):
             logger.debug("Checking py={} and npy={}".format(py, npy))
@@ -392,12 +394,13 @@ def resolve_dependencies(package_dependencies):
                          ''.format(remaining_dependencies))
 
 
-def run_build(metas, allow_failures=False):
+def run_build(build_order, allow_failures=False):
     """Build packages that do not already exist at {{ channel }}
 
     Parameters
     ----------
-    metas : iterable
+    build_order : iterable
+        The order that the packages should be built in
     recipes_path : str
         Iterable of conda build Metadata objects.
         HINT: output of `decide_what_to_build` is probably what should be
@@ -405,19 +408,6 @@ def run_build(metas, allow_failures=False):
     allow_failures : bool, optional
 
     """
-    dependency_graph = build_dependency_graph(metas)
-    metas_name_order = resolve_dependencies(dependency_graph)
-    # pdb.set_trace()
-    print('dependency_graph=%s' % metas_name_order)
-    # metas_name_order = resolve_dependencies(dependency_graph)
-    build_order = [meta for name in metas_name_order for meta in metas
-                   if meta.meta['package']['name'] == name]
-    # print('metas_order = {}'.format(metas_order))
-    # build_order = builder.sort_dependency_order(metas)
-    logger.info("Build Order.")
-    for meta in build_order:
-        logger.info(meta.build_name)
-
     build_or_test_failed = []
     build_success = []
     # for each package
@@ -513,6 +503,11 @@ already exist are built.
                                   "packages if one of them fails"),
         default=False, action="store_true"
     )
+    p.add_argument(
+        '--dry-run', help="Figure out what to build and then exit",
+        default=False, action="store_true"
+    )
+
     args = p.parse_args()
     if not args.python:
         args.python = [DEFAULT_PY]
@@ -537,10 +532,11 @@ already exist are built.
 
 def init_logging(log_file=None, loglevel=logging.INFO):
     if not log_file:
-        log_dirname = os.path.join(os.path.expanduser('~'),
-                                   'auto-build-logs')
-        os.makedirs(log_dirname, exist_ok=True)
-        log_filename = time.strftime("%m.%d-%H.%M")
+        log_dirname = os.path.join(tempfile.gettempdir(), 'buildmatrix')
+        if not os.path.exists(log_dirname):
+            os.mkdir(log_dirname)
+
+        log_filename = time.strftime("%Y.%m.%d-%H.%M")
         log = os.path.join(log_dirname, log_filename)
     # set up logging
     print('Logging summary to %s' % log)
@@ -559,7 +555,7 @@ def init_logging(log_file=None, loglevel=logging.INFO):
     logger.addHandler(file_handler)
 
 
-def run(recipes_path, python, channel, numpy, allow_failures=False):
+def run(recipes_path, python, channel, numpy, allow_failures=False, dry_run=False):
     """
     Run the build for all recipes listed in recipes_path
 
@@ -594,9 +590,24 @@ def run(recipes_path, python, channel, numpy, allow_failures=False):
         print('No recipes to build!. Exiting 0')
         sys.exit(0)
 
+    # sort into the correct order
+    dependency_graph = build_dependency_graph(metas_to_build)
+    metas_name_order = resolve_dependencies(dependency_graph)
+    build_order = [meta for name in metas_name_order for meta in metas_to_build
+                   if meta.meta['package']['name'] == name]
+    logger.info("\nThis is the determined build order...")
+    for meta in build_order:
+        logger.info(meta.build_name)
+
+    # bail out if we're in dry run mode
+    if dry_run:
+        print("Dry run enabled. Exiting 0")
+        sys.exit(0)
+
+
     # Run the actual build
     try:
-        results = run_build(metas_to_build, allow_failures=allow_failures)
+        results = run_build(build_order, allow_failures=allow_failures)
         results['alreadybuilt'] = sorted([skip.build_name
                                           for skip in metas_to_skip])
     except Exception as e:
