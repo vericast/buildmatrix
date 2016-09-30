@@ -1,0 +1,11 @@
+package:
+  name: package-b
+  version: 1
+
+requirements:
+  build:
+    - python
+  run:
+    - python
+    - needs-numpy-at-compilation
+

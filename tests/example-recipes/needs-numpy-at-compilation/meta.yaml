@@ -1,5 +1,5 @@
 package:
-    name: compiles-with-numpy
+    name: package-a
     version: 1
 
 requirements:

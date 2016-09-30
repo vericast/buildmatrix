@@ -33,7 +33,7 @@ def test_numpy_xx_dry_run(argv):
     recipe = join(
         dirname(__file__),
         'example-recipes',
-        'compiles-against-numpy')
+        'needs-numpy-at-compilation')
     with temp_argv(argv + ['--dry-run', recipe]):
         with pytest.raises(SystemExit) as se:
             cli.cli()
@@ -44,7 +44,7 @@ def test_numpy_xx(argv):
     recipe = join(
         dirname(__file__),
         'example-recipes',
-        'compiles-against-numpy')
+        'needs-numpy-at-compilation')
     with temp_argv(argv + [recipe]):
         cli.cli()
 

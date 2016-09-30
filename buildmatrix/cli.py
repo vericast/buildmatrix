@@ -222,6 +222,7 @@ def decide_what_to_build(recipes_path, python, packages, numpy):
         folders = [recipes_path]
     else:
         folders = sorted(os.listdir(recipes_path))
+    logger.info("\nFiguring out which recipes need to build...")
     for folder in folders:
         recipe_dir = os.path.join(recipes_path, folder)
         if os.path.isfile(recipe_dir):
@@ -238,7 +239,6 @@ def decide_what_to_build(recipes_path, python, packages, numpy):
         python_build_versions = python
         if 'python' not in set(build + run):
             python_build_versions = [DEFAULT_PY]
-        logger.info("\nFiguring out which recipes need to build...")
         for py, npy in itertools.product(python_build_versions,
                                          numpy_build_versions):
             logger.debug("Checking py={} and npy={}".format(py, npy))
@@ -477,7 +477,8 @@ already exist are built.
         '-c', "--channel",
         action='store',
         nargs='?',
-        help="Conda channel to check for pre-existing artifacts"
+        help="Conda channel to check for pre-existing artifacts",
+        default="anaconda"
     )
     p.add_argument(
         '-l', '--log',
