@@ -512,6 +512,11 @@ already exist are built.
                                   "packages if one of them fails"),
         default=False, action="store_true"
     )
+    p.add_argument(
+        '--dry-run', help="Figure out what to build and then exit",
+        default=False, action="store_true"
+    )
+
     args = p.parse_args()
     if not args.python:
         args.python = [DEFAULT_PY]
@@ -558,7 +563,7 @@ def init_logging(log_file=None, loglevel=logging.INFO):
     logger.addHandler(file_handler)
 
 
-def run(recipes_path, python, channel, numpy, allow_failures=False):
+def run(recipes_path, python, channel, numpy, allow_failures=False, dry_run=False):
     """
     Run the build for all recipes listed in recipes_path
 
@@ -591,6 +596,9 @@ def run(recipes_path, python, channel, numpy, allow_failures=False):
         recipes_path, python, packages, numpy)
     if metas_to_build == []:
         print('No recipes to build!. Exiting 0')
+        sys.exit(0)
+    if dry_run:
+        print("Dry run enabled. Exiting 0")
         sys.exit(0)
 
     # Run the actual build
