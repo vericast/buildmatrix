@@ -1,0 +1,23 @@
+language: python
+
+python:
+- 2.7
+- 3.4
+- 3.5
+
+before_install:
+  - git clone https://github.com/ericdill/ci ~/scripts
+  - . ~/scripts/install-miniconda.sh
+
+install:
+  - conda install conda-build pyyaml pip pytest
+  - conda update --all
+  - pip install codecov
+  - pip install .
+
+script:
+  - coverage run run_tests.py
+
+after_success:
+  - coverage report -m
+  - codecov
