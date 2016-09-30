@@ -533,7 +533,9 @@ already exist are built.
 def init_logging(log_file=None, loglevel=logging.INFO):
     if not log_file:
         log_dirname = os.path.join(tempfile.gettempdir(), 'buildmatrix')
-        os.mkdir(log_dirname)
+        if not os.path.exists(log_dirname):
+            os.mkdir(log_dirname)
+
         log_filename = time.strftime("%Y.%m.%d-%H.%M")
         log = os.path.join(log_dirname, log_filename)
     # set up logging
