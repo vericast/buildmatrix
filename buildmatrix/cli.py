@@ -608,7 +608,7 @@ def run(recipes_path, python, channel, numpy, allow_failures=False,
         logger.info(meta.build_name)
 
     if plan_file:
-        plan = {}
+        logger.info('Writing json file: {}'.format(plan_file))
         with open(plan_file, 'w') as f:
             json.dump([meta.meta for meta in build_order], f)
 
@@ -644,7 +644,7 @@ def run(recipes_path, python, channel, numpy, allow_failures=False,
                        "\n{}".format(pformat(results['build_or_test_failed'])))
             logger.error(message)
         if results['build_success']:
-            logger.info("Packages build successfully")
+            logger.info("Packages built successfully")
             logger.info(pformat(results['build_success']))
         if results['alreadybuilt']:
             logger.info('Packages that already exist in {}'.format(channel))
