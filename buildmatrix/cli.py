@@ -36,7 +36,7 @@ buildmatrix /folder/of/recipes --python 2.7 3.4 3.5 --numpy 1.10 1.11 -c some_co
 
 buildmatrix --help
 """
-
+import json
 import itertools
 import logging
 import os
@@ -508,6 +508,10 @@ already exist are built.
         '--dry-run', help="Figure out what to build and then exit",
         default=False, action="store_true"
     )
+    p.add_argument(
+        '--plan-file', help="File to output json version of the plan",
+        action="store"
+    )
 
     args = p.parse_args()
     if not args.python:
@@ -556,7 +560,8 @@ def init_logging(log_file=None, loglevel=logging.INFO):
     logger.addHandler(file_handler)
 
 
-def run(recipes_path, python, channel, numpy, allow_failures=False, dry_run=False):
+def run(recipes_path, python, channel, numpy, allow_failures=False,
+        dry_run=False, plan_file=None):
     """
     Run the build for all recipes listed in recipes_path
 
@@ -573,6 +578,8 @@ def run(recipes_path, python, channel, numpy, allow_failures=False, dry_run=Fals
     allow_failures : bool, optional
         True: Continue building packages after one has failed.
         Defaults to False
+    plan_file : str, optional
+        If not None, then output the plan to a file in json format
     """
     # check to make sure that the recipes_path exists
     if not os.path.exists(recipes_path):
@@ -599,6 +606,11 @@ def run(recipes_path, python, channel, numpy, allow_failures=False, dry_run=Fals
     logger.info("\nThis is the determined build order...")
     for meta in build_order:
         logger.info(meta.build_name)
+
+    if plan_file:
+        plan = {}
+        with open(plan_file, 'w') as f:
+            json.dump([meta.meta for meta in build_order], f)
 
     # bail out if we're in dry run mode
     if dry_run:
