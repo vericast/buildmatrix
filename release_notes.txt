@@ -1,0 +1,4 @@
+0.0.6
+-----
+- Added cli flag for json output of the build order (--plan-file)
+
