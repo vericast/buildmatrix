@@ -1,3 +1,7 @@
+0.0.7 (future)
+--------------
+- Inject numpy/python versions into the MetaData objects
+
 0.0.6
 -----
 - Added cli flag for json output of the build order (--plan-file)
