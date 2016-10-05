@@ -263,6 +263,8 @@ def decide_what_to_build(recipes_path, python, packages, numpy):
                 meta.full_build_path = path_to_built_package
                 meta.build_name = name_on_anaconda
                 meta.build_command = build_cmd
+                meta.python_version = py
+                meta.numpy_version = npy
                 if on_anaconda_channel:
                     metas_not_to_build.append(meta)
                 else:
@@ -610,7 +612,10 @@ def run(recipes_path, python, channel, numpy, allow_failures=False,
     if plan_file:
         plan = {}
         with open(plan_file, 'w') as f:
-            json.dump([meta.meta for meta in build_order], f)
+            json.dump([{'python_version': meta.python_version,
+                        'numpy_version': meta.numpy_version,
+                        'recipe_dict': meta.meta}
+                       for meta in build_order], f)
 
     # bail out if we're in dry run mode
     if dry_run:
