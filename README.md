@@ -29,6 +29,40 @@ buildmatrix is a thin wrapper around conda-build that does four things:
 
 ## Usage
 
+```
+$ buildmatrix -h
+usage: buildmatrix [-h] [-p [PYTHON [PYTHON ...]]] [-c [CHANNEL]] [-l [LOG]]
+                   [--numpy [NUMPY [NUMPY ...]]] [-v] [--pdb]
+                   [--allow-failures] [--dry-run] [--plan-file PLAN_FILE]
+                   [recipes_path]
+
+Tool for building a folder of conda recipes where only the ones that don't
+already exist are built.
+
+positional arguments:
+  recipes_path          path to recipes that should be built
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p [PYTHON [PYTHON ...]], --python [PYTHON [PYTHON ...]]
+                        Python version to build conda packages for
+  -c [CHANNEL], --channel [CHANNEL]
+                        Conda channel to check for pre-existing artifacts
+  -l [LOG], --log [LOG]
+                        Name of the log file to write
+  --numpy [NUMPY [NUMPY ...]]
+                        List the numpy versions to build packages for.
+                        Defaults to ['1.11']
+  -v, --verbose         Enable DEBUG level logging. Default is INFO
+  --pdb                 Enable PDB debugging on exception
+  --allow-failures      Enable build.py to continue building conda packages if
+                        one of them fails
+  --dry-run             Figure out what to build and then exit
+  --plan-file PLAN_FILE
+                        File to output json version of the plan
+
+```
+
 `buildmatrix` depends on conda and conda_build.  You can pip install
 buildmatrix and it will add the `buildmatrix` command line app and its
 alias `bm` for those of you that abhor typing more than is absolutely 
