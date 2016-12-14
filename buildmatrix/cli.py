@@ -54,7 +54,7 @@ from pprint import pformat
 from conda.api import get_index
 from conda_build.metadata import MetaData
 
-logger = logging.getLogger('build.py')
+logger = logging.getLogger('cli.py')
 current_subprocs = set()
 shutdown = False
 
@@ -527,36 +527,29 @@ already exist are built.
     args_dct['recipes_path'] = os.path.abspath(args.recipes_path)
     if args_dct.get('channel') is None:
         p.print_help()
-        print("\nError: Need to pass in an anaconda channel with '-c' or "
+        logger.error("\nError: Need to pass in an anaconda channel with '-c' or "
               "'--channel'\n")
         sys.exit(1)
 
-    print(args_dct)
+    logger.error(args_dct)
     run(**args_dct)
 
 
 def init_logging(log_file=None, loglevel=logging.INFO):
-    if not log_file:
+    global logger
+    if log_file is None:
         log_dirname = os.path.join(tempfile.gettempdir(), 'buildmatrix')
         if not os.path.exists(log_dirname):
             os.mkdir(log_dirname)
 
         log_filename = time.strftime("%Y.%m.%d-%H.%M")
-        log = os.path.join(log_dirname, log_filename)
+        log_file = os.path.join(log_dirname, log_filename)
+    print('Logging summary to %s' % log_file)
     # set up logging
-    print('Logging summary to %s' % log)
-    stream_handler = logging.StreamHandler()
-    file_handler = logging.FileHandler(log)
-
+    file_handler = logging.FileHandler(log_file)
     file_handler.setLevel(loglevel)
-    stream_handler.setLevel(loglevel)
     logger.setLevel(loglevel)
 
-    # FORMAT = "%(levelname)s | %(asctime)-15s | %(message)s"
-    # file_handler.setFormatter(FORMAT)
-    # stream_handler.setFormatter(FORMAT)
-
-    logger.addHandler(stream_handler)
     logger.addHandler(file_handler)
 
 
