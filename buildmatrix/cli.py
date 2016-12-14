@@ -531,7 +531,7 @@ already exist are built.
               "'--channel'\n")
         sys.exit(1)
 
-    logger.error(args_dct)
+    logger.info(args_dct)
     run(**args_dct)
 
 
