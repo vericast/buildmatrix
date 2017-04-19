@@ -1,3 +1,9 @@
+# THIS PROJECT IS DEPRECATED
+
+`buildmatrix` is no longer under development. All known use cases for buildmatrix exist
+in [conda-build-all](https://github.com/SciTools/conda-build-all). `conda-build-all` is
+a supported project and is used by conda-forge, so has wide usage already.
+
 # buildmatrix
 
 [![Build Status](https://travis-ci.org/ericdill/buildmatrix.svg?branch=master)](https://travis-ci.org/ericdill/buildmatrix)
